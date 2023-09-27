@@ -29,3 +29,8 @@ Follow the steps:
 - git clone
 - npm i
 - ng serve
+
+## Deployment results
+
+Cloudfront URL: https://d2tguk965hq1zn.cloudfront.net/
+S3 bucket URL: https://epam-aws-training.s3-eu-west-1.amazonaws.com/  (Access is denied 403, according to the task)
