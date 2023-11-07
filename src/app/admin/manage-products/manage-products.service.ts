@@ -1,7 +1,8 @@
 import { Injectable, Injector } from '@angular/core';
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, of, throwError } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { switchMap } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 
 @Injectable()
 export class ManageProductsService extends ApiService {
@@ -10,13 +11,6 @@ export class ManageProductsService extends ApiService {
   }
 
   uploadProductsCSV(file: File): Observable<unknown> {
-    if (!this.endpointEnabled('import')) {
-      console.warn(
-        'Endpoint "import" is disabled. To enable change your environment.ts config'
-      );
-      return EMPTY;
-    }
-
     return this.getPreSignedUrl(file.name).pipe(
       switchMap((url) =>
         this.http.put(url, file, {
@@ -32,10 +26,28 @@ export class ManageProductsService extends ApiService {
   private getPreSignedUrl(fileName: string): Observable<string> {
     const url = this.getUrl('import', 'import');
 
-    return this.http.get<string>(url, {
-      params: {
-        name: fileName,
-      },
-    });
+    const token = localStorage.getItem('authorization_token');
+    const headers = new HttpHeaders();
+    if (token) {
+      headers.set('Authorization', `Basic ${token}`);
+    }
+
+    return this.http
+      .get<string>(url, {
+        params: {
+          name: fileName,
+        },
+        headers,
+      })
+      .pipe(
+        // eslint-disable-next-line rxjs/no-implicit-any-catch
+        catchError((errorData: HttpErrorResponse) => {
+          const { error, status } = errorData;
+          if (error.status === 401 || error.status === 403) {
+            alert(`Status: ${status}. Message: ${error.message}`);
+          }
+          return throwError(() => errorData);
+        })
+      );
   }
 }

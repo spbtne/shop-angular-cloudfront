@@ -50,9 +50,12 @@ export class ProductsService extends ApiService {
     }
 
     const url = this.getUrl('bff', `products/${id}`);
-    return this.http
-      .get<{ product: Product }>(url)
-      .pipe(map((resp) => resp.product));
+    return this.http.get<{ product: Product }>(url).pipe(
+      map((resp) => ({
+        ...resp.product,
+        price: parseFloat(String(resp.product.price).replace(/,/g, '')),
+      }))
+    );
   }
 
   getProducts(): Observable<Product[]> {
@@ -64,7 +67,14 @@ export class ProductsService extends ApiService {
     }
 
     const url = this.getUrl('bff', 'products');
-    return this.http.get<Product[]>(url);
+    return this.http.get<Product[]>(url).pipe(
+      map((products) =>
+        products.map((product) => ({
+          ...product,
+          price: parseFloat(String(product.price).replace(/,/g, '')),
+        }))
+      )
+    );
   }
 
   getProductsForCheckout(ids: string[]): Observable<Product[]> {
